@@ -1700,6 +1700,13 @@ namespace AAXClasses
                         recordingState.set (info.mIsRecording);
                     }
                     break;
+
+                case AAX_eNotificationEvent_ASPreviewState: {
+                    if (data != nullptr && size == sizeof(AAX_EPreviewState)) {
+                        const auto state = *static_cast<const AAX_EPreviewState *>(data);
+                        const auto isPreview = state == AAX_ePreviewState_Start;
+                    }
+                }
             }
 
             return AAX_CEffectParameters::NotificationReceived (type, data, size);
