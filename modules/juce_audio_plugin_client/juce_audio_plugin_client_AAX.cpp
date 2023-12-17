@@ -879,6 +879,11 @@ namespace AAXClasses
                 (static_cast<AAX_VHostProcessorDelegate*>(GetHostProcessorDelegate()))->ForceProcess();
             }
 
+            int64_t getLocation() override
+            {
+                return GetLocation();
+            }
+
             AAX_Result AnalyzeAudio (const float * const iAudioIns [], int32_t iAudioInCount, int32_t * ioWindowSize) override
             {
                 Array<const float*> inputChannelList;
