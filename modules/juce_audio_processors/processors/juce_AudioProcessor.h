@@ -352,6 +352,7 @@ public:
         virtual ~EnhancedAudioSuiteInterface() {}
         virtual void requestAnalysis() = 0;
         virtual void requestRender() = 0;
+        virtual long long getLocation() = 0;
     };
 
     EnhancedAudioSuiteInterface* enhancedAudioSuiteInterface {nullptr};
