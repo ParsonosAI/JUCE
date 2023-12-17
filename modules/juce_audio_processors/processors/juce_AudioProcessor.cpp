@@ -410,6 +410,11 @@ void AudioProcessor::setNonRealtime (bool newNonRealtime) noexcept
     nonRealtime = newNonRealtime;
 }
 
+void AudioProcessor::setPreview (bool newPreview) noexcept
+{
+    preview = newPreview;
+}
+
 void AudioProcessor::setLatencySamples (int newLatency)
 {
     if (latencySamples != newLatency)

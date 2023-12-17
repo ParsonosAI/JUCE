@@ -1005,6 +1005,7 @@ public:
         @see setNonRealtime()
     */
     bool isNonRealtime() const noexcept                                 { return nonRealtime; }
+    bool isPreview() const noexcept{ return preview; }
 
     /** Returns no if the processor is being run in an offline mode for rendering.
 
@@ -1025,6 +1026,7 @@ public:
         capacity for offline rendering or bouncing.
     */
     virtual void setNonRealtime (bool isNonRealtime) noexcept;
+    virtual void setPreview (bool isPreview) noexcept;
 
     //==============================================================================
     /** Creates the processor's GUI.
@@ -1620,6 +1622,7 @@ private:
     int blockSize = 0, latencySamples = 0;
     bool suspended = false;
     std::atomic<bool> nonRealtime { false };
+    std::atomic<bool> preview { false };
     ProcessingPrecision processingPrecision = singlePrecision;
     CriticalSection callbackLock, listenerLock, activeEditorLock;
 
