@@ -1034,6 +1034,7 @@ namespace AAXClasses
 
             AAX_Result PostRender () override
             {
+                getAAXProcessor().getPluginInstance().renderFinished();
                 getAAXProcessor().getPluginInstance().setRandomAudioReader(nullptr);
                 return AAX_SUCCESS;
             }

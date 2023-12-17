@@ -332,6 +332,7 @@ public:
         For offline processing (currently Pro Tools AudioSuite), being called after analyse stage finished.
      */
     virtual void analysisFinished ();
+    virtual void renderFinished ();
 
 #if JucePlugin_EnhancedAudioSuite
     /** Allows aborting plug-in load due to license failure instead of crashing. */
