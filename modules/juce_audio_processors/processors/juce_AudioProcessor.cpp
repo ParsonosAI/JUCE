@@ -652,6 +652,12 @@ void AudioProcessor::analysisFinished ()
     jassertfalse;
 }
 
+void AudioProcessor::renderFinished ()
+{
+    // If you hit this assertion then you've got analysis called but you haven't implement required callbacks.
+    jassertfalse;
+}
+
 void AudioProcessor::processBlock ([[maybe_unused]] AudioBuffer<double>& buffer,
                                    [[maybe_unused]] MidiBuffer& midiMessages)
 {
