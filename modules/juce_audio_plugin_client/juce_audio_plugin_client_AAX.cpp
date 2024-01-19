@@ -906,7 +906,6 @@ namespace AAXClasses
                     mIsFirstPass = false;
                 }
 
-                jassert (getAAXProcessor().getPluginInstance().getMainBusNumInputChannels() == numOfMainInputs);
                 getAAXProcessor().getPluginInstance().analyseBlock (buffer);
 
                 return AAX_SUCCESS;
