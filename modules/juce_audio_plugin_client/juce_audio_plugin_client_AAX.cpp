@@ -1705,6 +1705,8 @@ namespace AAXClasses
                     if (data != nullptr && size == sizeof(AAX_EPreviewState)) {
                         const auto state = *static_cast<const AAX_EPreviewState *>(data);
                         const auto isPreview = state == AAX_ePreviewState_Start;
+                        pluginInstance->setPreview(isPreview);
+                    break;
                     }
                 }
             }
