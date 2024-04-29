@@ -41,9 +41,8 @@ class JUCE_API  BufferingAudioReader  : public AudioFormatReader,
 public:
     /** Creates a reader.
 
-        @param sourceReader     the source reader to wrap. This BufferingAudioReader
-                                takes ownership of this object and will delete it later
-                                when no longer needed
+        @param sourceReader     the source reader to wrap. You must ensure that it outlives 
+                                this!
         @param timeSliceThread  the thread that should be used to do the background reading.
                                 Make sure that the thread you supply is running, and won't
                                 be deleted while the reader object still exists.
@@ -82,7 +81,7 @@ private:
 
     static constexpr int samplesPerBlock = 32768;
 
-    std::unique_ptr<AudioFormatReader> source;
+    AudioFormatReader* source;
     TimeSliceThread& thread;
     std::atomic<int64> nextReadPosition { 0 };
     const int numBlocks;
