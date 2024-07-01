@@ -335,6 +335,14 @@ void AudioProcessor::setPlayHead (AudioPlayHead* newPlayHead)
     playHead = newPlayHead;
 }
 
+#if RANDOM_AUDIO_ACCESS_SUPPORTED
+void AudioProcessor::setRandomAudioReader (AudioFormatReader* const newAudioFormatReader)
+{
+    randomAudioReader = newAudioFormatReader;
+}
+#endif
+
+
 void AudioProcessor::addListener (AudioProcessorListener* newListener)
 {
     const ScopedLock sl (listenerLock);
@@ -412,6 +420,11 @@ void AudioProcessor::setNonRealtime (bool newNonRealtime) noexcept
     nonRealtime = newNonRealtime;
 }
 
+void AudioProcessor::setPreview (bool newPreview) noexcept
+{
+    preview = newPreview;
+}
+
 void AudioProcessor::setLatencySamples (int newLatency)
 {
     if (latencySamples != newLatency)
@@ -419,6 +432,12 @@ void AudioProcessor::setLatencySamples (int newLatency)
         latencySamples = newLatency;
         updateHostDisplay (AudioProcessorListener::ChangeDetails().withLatencyChanged (true));
     }
+}
+
+bool AudioProcessor::isHighResolutionParameters(bool initialValue)
+{
+    static bool isHighResolutionParams = initialValue;
+    return isHighResolutionParams;
 }
 
 //==============================================================================
@@ -604,6 +623,51 @@ void AudioProcessor::processBypassed (AudioBuffer<floatType>& buffer, MidiBuffer
 
 void AudioProcessor::processBlockBypassed (AudioBuffer<float>&  buffer, MidiBuffer& midi)    { processBypassed (buffer, midi); }
 void AudioProcessor::processBlockBypassed (AudioBuffer<double>& buffer, MidiBuffer& midi)    { processBypassed (buffer, midi); }
+
+void AudioProcessor::analyseBlock (const AudioBuffer<float>& buffer)
+{
+    ignoreUnused (buffer);
+    // If you hit this assertion then you've got analysis called but you haven't implement required callbacks.
+    jassertfalse;
+}
+
+void AudioProcessor::analyseBlock (const AudioBuffer<double>& buffer)
+{
+    ignoreUnused (buffer);
+
+    // If you hit this assertion then either the caller called the double
+    // precision version of analyseBlock on a processor which does not support it
+    // (i.e. supportsDoublePrecisionProcessing() returns false), or the implementation
+    // of the AudioProcessor forgot to override the double precision version of this method
+    jassertfalse;
+}
+
+void AudioProcessor::prepareToAnalyse (double sampleRate, int maximumExpectedSamplesPerBlock, int numOfExpectedInputs)
+{
+    ignoreUnused (sampleRate, maximumExpectedSamplesPerBlock, numOfExpectedInputs);
+    // If you hit this assertion then you've got analysis called but you haven't implement required callbacks.
+    jassertfalse;
+}
+
+#if JucePlugin_EnhancedAudioSuite
+void AudioProcessor::getOfflineRenderOffset (int& startOffset, int& endOffset)
+{
+    startOffset = endOffset = 0;
+}
+#endif
+
+void AudioProcessor::analysisFinished ()
+{
+    // If you hit this assertion then you've got analysis called but you haven't implement required callbacks.
+    jassertfalse;
+}
+
+void AudioProcessor::renderFinished ()
+{
+    // If you hit this assertion then you've got analysis called but you haven't implement required callbacks.
+    jassertfalse;
+}
+
 
 void AudioProcessor::processBlock ([[maybe_unused]] AudioBuffer<double>& buffer,
                                    [[maybe_unused]] MidiBuffer& midiMessages)
@@ -1206,6 +1270,7 @@ const char* AudioProcessor::getWrapperTypeDescription (AudioProcessor::WrapperTy
         case AudioProcessor::wrapperType_AudioUnit:     return "AU";
         case AudioProcessor::wrapperType_AudioUnitv3:   return "AUv3";
         case AudioProcessor::wrapperType_AAX:           return "AAX";
+        case AudioProcessor::wrapperType_AudioSuite:    return "AudioSuite";
         case AudioProcessor::wrapperType_Standalone:    return "Standalone";
         case AudioProcessor::wrapperType_Unity:         return "Unity";
         case AudioProcessor::wrapperType_LV2:           return "LV2";
@@ -1536,6 +1601,7 @@ void AudioProcessorParameter::setValueNotifyingHost (float newValue)
 void AudioProcessorParameter::beginChangeGesture()
 {
     // This method can't be used until the parameter has been attached to a processor!
+    // NOTE: `parsonos-patch` deleted there, necessary?
     jassert (processor != nullptr && parameterIndex >= 0);
 
    #if JUCE_DEBUG && ! JUCE_DISABLE_AUDIOPROCESSOR_BEGIN_END_GESTURE_CHECKING
@@ -1565,6 +1631,7 @@ void AudioProcessorParameter::beginChangeGesture()
 void AudioProcessorParameter::endChangeGesture()
 {
     // This method can't be used until the parameter has been attached to a processor!
+    // NOTE: `parsonos-patch` deleted there, necessary?
     jassert (processor != nullptr && parameterIndex >= 0);
 
    #if JUCE_DEBUG && ! JUCE_DISABLE_AUDIOPROCESSOR_BEGIN_END_GESTURE_CHECKING

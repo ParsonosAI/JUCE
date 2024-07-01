@@ -35,6 +35,8 @@
 namespace juce
 {
 
+class AudioFormatReader;
+
 //==============================================================================
 /**
     Base class for audio processing classes or plugins.
@@ -313,6 +315,58 @@ public:
     virtual void processBlockBypassed (AudioBuffer<double>& buffer,
                                        MidiBuffer& midiMessages);
 
+    /** Analyses the next block before actual process.
+
+        For offline processing (currently Pro Tools AudioSuite) this basically pass input buffers.
+        You can use those buffers to do analysis before doing the actual process.
+     */
+    virtual void analyseBlock (const AudioBuffer<float>& buffer);
+
+    /** Analyses the next block before actual process.
+
+        For offline processing (currently Pro Tools AudioSuite) this basically pass input buffers.
+        You can use those buffers to do analysis before doing the actual process.
+     */
+    virtual void analyseBlock (const AudioBuffer<double>& buffer);
+
+    /** Notifies AudioProcessor that analysis is about to start.
+
+        For offline processing (currently Pro Tools AudioSuite), being called before analysis.
+        Note: when side-chain is connected this would be the maximum number of supported tracks.
+     */
+    virtual void prepareToAnalyse (double sampleRate, int samplesPerBlock, int numOfExpectedInputs);
+
+    /** Notifies AudioProcessor that analysis has finished.
+
+        For offline processing (currently Pro Tools AudioSuite), being called after analyse stage finished.
+     */
+    virtual void analysisFinished ();
+    virtual void renderFinished ();
+
+#if JucePlugin_EnhancedAudioSuite
+    /** Allows aborting plug-in load due to license failure instead of crashing. */
+    virtual bool isAuthorized() { return true; }
+
+    /** Called by AudioSuite to add offsets to processed clip.
+
+        For example, if your process adds tail explicitly or start before actual position.
+        This method is also called in a few different scenarios:
+            - Before an analyze, process or preview of data begins.
+            - At the end of every preview loop.
+            - After the user makes a new data selection on the timeline.
+     */
+    virtual void getOfflineRenderOffset (int& startOffset, int& endOffset);
+
+    struct EnhancedAudioSuiteInterface
+    {
+        virtual ~EnhancedAudioSuiteInterface() {}
+        virtual void requestAnalysis() = 0;
+        virtual void requestRender() = 0;
+        virtual long long getLocation() = 0;
+    };
+
+    EnhancedAudioSuiteInterface* enhancedAudioSuiteInterface {nullptr};
+#endif
 
     //==============================================================================
     /**
@@ -737,6 +791,24 @@ public:
     AudioPlayHead* getPlayHead() const noexcept                 { return playHead; }
 
     //==============================================================================
+    /** Returns the current AudioFormatReader object that should allow random access
+        to processed audio (if supported).
+
+     You can ONLY call this from your analyseBlock() / processBlock() method!
+     Calling it at other times will produce undefined behaviour.
+
+     The AudioFormatReader object that is returned can be used to get current
+     audio in a random access manner.
+
+     If the host can't or won't provide any time info, this will return nullptr.
+     */
+#if RANDOM_AUDIO_ACCESS_SUPPORTED
+    AudioFormatReader* getRandomAudioReader() const noexcept { return randomAudioReader; }
+#endif
+
+
+
+    //==============================================================================
     /** Returns the total number of input channels.
 
         This method will return the total number of input channels by accumulating
@@ -922,8 +994,6 @@ public:
 
     //==============================================================================
     /** Returns the parameter that controls the AudioProcessor's bypass state.
-
-        If this method returns a nullptr then you can still control the bypass by
         calling processBlockBypassed instead of processBlock. On the other hand,
         if this method returns a non-null value, you should never call
         processBlockBypassed but use the returned parameter to control the bypass
@@ -934,6 +1004,7 @@ public:
         processBlock callback and bypass any effects if it is non-zero.
     */
     virtual AudioProcessorParameter* getBypassParameter() const        { return nullptr; }
+
 
     //==============================================================================
     /** Returns true if the processor is being run in an offline mode for rendering.
@@ -947,6 +1018,7 @@ public:
         @see setNonRealtime()
     */
     bool isNonRealtime() const noexcept                                 { return nonRealtime; }
+    bool isPreview() const noexcept{ return preview; }
 
     /** Returns no if the processor is being run in an offline mode for rendering.
 
@@ -967,6 +1039,7 @@ public:
         capacity for offline rendering or bouncing.
     */
     virtual void setNonRealtime (bool isNonRealtime) noexcept;
+    virtual void setPreview (bool isPreview) noexcept;
 
     //==============================================================================
     /** Creates the processor's GUI.
@@ -1017,6 +1090,18 @@ public:
         This may call createEditor() internally to create the component.
     */
     AudioProcessorEditor* createEditorIfNeeded();
+
+    //==============================================================================
+    /** Returns if AU should use high resolution (continious) instead of steps for better precision.
+
+     Use to replace JucePlugin_AUHighResolutionParameters, however that macro was already removed by JUCE which now always uses high resolution parameters, unless JUCE_FORCE_LEGACY_PARAMETER_AUTOMATION_TYPE is turned on.
+     So in order for this method to take effect, JUCE_FORCE_LEGACY_PARAMETER_AUTOMATION_TYPE must be on.
+
+     This must return the correct value immediately after the object has been
+     created, and mustn't change the value later.
+     */
+    virtual bool isHighResolutionParameters(bool initialValue = false);
+
 
     //==============================================================================
     /** Returns the default number of steps for a parameter.
@@ -1173,6 +1258,15 @@ public:
     virtual void setPlayHead (AudioPlayHead* newPlayHead);
 
     //==============================================================================
+    /** Tells the processor to use this AudioFormatReader object.
+     The processor will not take ownership of the object, so the caller must delete it when
+     it is no longer being used.
+     */
+#if RANDOM_AUDIO_ACCESS_SUPPORTED
+    virtual void setRandomAudioReader (AudioFormatReader* newRandomAudioMapper);
+#endif
+
+    //==============================================================================
     /** This is called by the processor to specify its details before being played. Use this
         version of the function if you are not interested in any sidechain and/or aux buses
         and do not care about the layout of channels. Otherwise use setRateAndBufferSizeDetails.*/
@@ -1263,6 +1357,7 @@ public:
         wrapperType_AudioUnit,
         wrapperType_AudioUnitv3,
         wrapperType_AAX,
+        wrapperType_AudioSuite,
         wrapperType_Standalone,
         wrapperType_Unity,
         wrapperType_LV2
@@ -1437,6 +1532,11 @@ protected:
     /** @internal */
     std::atomic<AudioPlayHead*> playHead { nullptr };
 
+#if RANDOM_AUDIO_ACCESS_SUPPORTED
+    /** @internal */
+    AudioFormatReader* randomAudioReader = nullptr;
+#endif
+
     /** @internal */
     void sendParamChangeMessageToListeners (int parameterIndex, float newValue);
 
@@ -1525,6 +1625,8 @@ private:
 
     BusesLayout getNextBestLayoutInList (const BusesLayout&, const Array<InOutChannelPair>&) const;
     static bool containsLayout (const BusesLayout&, const Array<InOutChannelPair>&);
+    // NOTE: `parsonons-patch`, necessary?
+    // static bool JUCE_CALLTYPE containsLayout (const BusesLayout&, const Array<InOutChannelPair>&);
 
     //==============================================================================
     void createBus (bool isInput, const BusProperties&);
@@ -1536,6 +1638,7 @@ private:
     int blockSize = 0, latencySamples = 0;
     bool suspended = false;
     std::atomic<bool> nonRealtime { false };
+    std::atomic<bool> preview { false };
     ProcessingPrecision processingPrecision = singlePrecision;
     CriticalSection callbackLock, listenerLock, activeEditorLock;
 

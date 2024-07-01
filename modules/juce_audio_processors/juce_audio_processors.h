@@ -67,6 +67,13 @@
 #include <juce_gui_extra/juce_gui_extra.h>
 #include <juce_audio_basics/juce_audio_basics.h>
 
+#if JucePlugin_EnhancedAudioSuite
+ #define RANDOM_AUDIO_ACCESS_SUPPORTED 1
+ #if ! JUCE_MODULE_AVAILABLE_juce_audio_formats
+  #error To compile random access support plug-in formats, you need to add the juce_audio_formats module!
+ #endif
+#endif
+
 //==============================================================================
 /** Config: JUCE_PLUGINHOST_VST
     Enables the VST audio plugin hosting classes. You will need to have the VST2 SDK files in your header search paths. You can obtain the VST2 SDK files from on older version of the VST3 SDK.

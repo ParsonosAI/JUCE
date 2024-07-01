@@ -130,6 +130,28 @@ public:
     */
     virtual void setScaleFactor (float newScale);
 
+    /** Used by the getCustomLabel() method. */
+    enum CustomHostLabel
+    {
+        AnalyzeLabel,
+        MonoModeLabel,
+        MultiInputModeLabel,
+        ClipByClipLabel,
+        WholeFileLabel,
+        ClipNameLabel,
+        ProgressLabel,
+        PlugInFileNameLabel,
+        PreviewLabel,
+        RenderLabel,
+        BypassLabel
+    };
+
+    /** Some types of plugin can call this to set different naming for their own UI labels.
+     Currently only AAX (AudioSuite) plugins will call this, and implementing it is optional.
+     */
+    virtual String getCustomLabel (CustomHostLabel buttonLabel);
+
+
     //==============================================================================
     /** Sets whether the editor is resizable by the host and/or user.
 
