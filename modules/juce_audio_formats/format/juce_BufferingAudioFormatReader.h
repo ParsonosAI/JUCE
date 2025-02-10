@@ -60,7 +60,7 @@ public:
     */
     BufferingAudioReader (AudioFormatReader* sourceReader,
                           TimeSliceThread& timeSliceThread,
-                          int samplesToBuffer);
+                          int samplesToBuffer, bool shouldTakeOwnership=true);
 
     ~BufferingAudioReader() override;
 
@@ -91,7 +91,7 @@ private:
 
     static constexpr int samplesPerBlock = 32768;
 
-    std::unique_ptr<AudioFormatReader> source;
+    std::unique_ptr<AudioFormatReader, std::function<void(AudioFormatReader*)>> source;
     TimeSliceThread& thread;
     std::atomic<int64> nextReadPosition { 0 };
     const int numBlocks;

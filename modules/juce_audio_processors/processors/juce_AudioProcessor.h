@@ -1557,7 +1557,7 @@ protected:
 
 
     /** @internal */
-    std::atomic<AudioFormatReader*> randomAudioReader = { nullptr };
+    AudioFormatReader* randomAudioReader = { nullptr };
 
     /** @internal */
     void sendParamChangeMessageToListeners (int parameterIndex, float newValue);

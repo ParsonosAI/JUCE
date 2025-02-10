@@ -37,10 +37,10 @@ namespace juce
 
 BufferingAudioReader::BufferingAudioReader (AudioFormatReader* sourceReader,
                                             TimeSliceThread& timeSliceThread,
-                                            int samplesToBuffer)
+                                            int samplesToBuffer, bool shouldTakeOwnership)
     : AudioFormatReader (nullptr, sourceReader->getFormatName()),
-      source (sourceReader), thread (timeSliceThread),
-      numBlocks (1 + (samplesToBuffer / samplesPerBlock))
+      source (sourceReader, shouldTakeOwnership ? [](AudioFormatReader*p){ delete p; } : [](AudioFormatReader*p){}),
+      thread (timeSliceThread), numBlocks (1 + (samplesToBuffer / samplesPerBlock))
 {
     sampleRate            = source->sampleRate;
     lengthInSamples       = source->lengthInSamples;
